@@ -1,0 +1,4 @@
+pickle
+beautifulsoup4
+selenium
+openpyxl 
