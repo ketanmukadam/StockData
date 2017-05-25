@@ -1,4 +1,3 @@
-#!/usr/bin/python3 
 import pdb
 import csv
 import re
@@ -17,14 +16,6 @@ from openpyxl import Workbook
 from openpyxl.utils import column_index_from_string
 from copy import copy
 
-
-url = "http://www.moneycontrol.com/india/stockpricequote/plastics/mayuruniquoters/MU"
-#url = "http://www.moneycontrol.com/india/stockpricequote/pharmaceuticals/sunpharmaceuticalindustries/SPI"
-
-xlsinfile = "Stock_Analysis_Final.xlsx"
-xlsoutfile = url.split(sep='/')[-2] + '.xlsx'
-xlsfullfile = url.split(sep='/')[-2] + 'full.xlsx'
-worksheetname = "InputData"
 
 bs_keyref = ['EQUITIES AND LIABILITIES',"SHAREHOLDER'S FUNDS",'Total Share Capital',
     'Total Reserves and Surplus', 'NON-CURRENT LIABILITIES',
@@ -335,10 +326,4 @@ class WgetFinData():
                self.scrape_page(i+1)
           self.close_driver()
           
-u = WgetFinData(url,"Mayur")
-u.get_data(url.split(sep='/')[-2]+'pickle.p')
-#u.print_table()
-u.copy_fulldata(xlsfullfile)
-u.copy_mysheet(xlsinfile, xlsoutfile, worksheetname)
-print("Copied Data to %s" % xlsoutfile)
 
