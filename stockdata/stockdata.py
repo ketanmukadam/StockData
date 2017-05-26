@@ -97,7 +97,7 @@ class WgetFinData():
              self.data = pickle.load(open(filename, "rb"))
           except (OSError, IOError) as e:
              for pg in page_list:
-                 u.scrape_page(pg)
+                 self.scrape_page(pg)
              self.dump_data(filename)
 
       def print_table(self):
