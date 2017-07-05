@@ -5,3 +5,4 @@ __pycache__/
 *.xlsx
 *.log
 *.p
+!template.xlsx
