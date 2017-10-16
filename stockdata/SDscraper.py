@@ -135,7 +135,7 @@ class SDScraperMixin():
       def scrape_page(self,num):
           navigXpath = ['''//*[@id="slider"]/dt[7]/a''',
                 '''//*[@id="slider"]/dd[3]/ul/li['''+str(num)+''']/a''',
-		'''//*[@id="mc_mainWrapper"]/div[2]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/div[1]/div[1]/table/tbody/tr/td/a/b''']
+		'''//*[@id="mc_mainWrapper"]/div[3]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/div[1]/div[1]/table/tbody/tr/td/a/b''']
           try:
              self.driver.find_element_by_xpath(navigXpath[0]).click()
              self.driver.find_element_by_xpath(navigXpath[1]).click()

@@ -1,4 +1,4 @@
-pickle
-beautifulsoup4
-selenium
-openpyxl 
+pickle==12.1
+BeautifulSoup==4.6.0
+selenium==3.6.0
+openpyxl==2.5.0a3
