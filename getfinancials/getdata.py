@@ -8,9 +8,11 @@ from pandas import ExcelWriter
 from optparse import OptionParser
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from openpyxl import load_workbook
 from openpyxl import Workbook
 from openpyxl.utils import column_index_from_string
+from collections import Counter
 
 defaulturl = '''http://www.moneycontrol.com/india/stockpricequote/miscellaneous/crisil/CRI'''
 inxlsfile = os.path.join(os.getcwd(),defaulturl.split()[0].split('/')[6]+"MC.xlsx")
@@ -151,6 +153,7 @@ def index_union(df1, df2, pagenum):
              [resultlist.append(x) for x in b1list[p1:c1][:1]+list(set(b1list[p1:c1][1:]+b2list[p2:c2][1:]))]
              p1 = c1
              p2 = c2
+    #print([k for k,v in Counter(resultlist).items() if v>1]) Find duplicates in resultlist
     return resultlist
 
 def cleanz_data(df):
@@ -205,23 +208,31 @@ def pull_data(page_source):
                     data.append([ele for ele in cols if ele]) # Get rid of empty values
     return data
 
-def scrape_page(driver,pagenum):
+def scrape_page(driver,pagenum,cflag):
     navigXpath = ['''//*[@id="slider"]/dt[7]/a''',
                   '''//*[@id="slider"]/dd[3]/ul/li['''+str(pagenum)+''']/a''',
+                  '''//*[@id="mc_mainWrapper"]/div[3]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/ul/li[2]/a''',
 		  '''//*[@id="mc_mainWrapper"]/div[3]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/div[1]/div[1]/table/tbody/tr/td/a/b''']
     try:
+        print('--------'+str(pagenum)+'--------')
         driver.find_element_by_xpath(navigXpath[0]).click()
         driver.find_element_by_xpath(navigXpath[1]).click()
-        First5yr = pull_data(driver.page_source)
+        if not cflag:
+            First5yr = pull_data(driver.page_source)
+            driver.find_element_by_xpath(navigXpath[3]).click()
+            Second5yr = pull_data(driver.page_source)
+        else:
+            driver.find_element_by_xpath(navigXpath[2]).click()
+            First5yr = pull_data(driver.page_source)
+            driver.find_element_by_xpath(navigXpath[3]).click()
+            Second5yr = pull_data(driver.page_source)
         #save_data(First5yr,defaulturl.split(sep='/')[6] + '1.xlsx')
-        driver.find_element_by_xpath(navigXpath[2]).click()
-        Second5yr = pull_data(driver.page_source)
         #save_data(Second5yr,defaulturl.split(sep='/')[6] + '2.xlsx')
         return merge_lists(First5yr, Second5yr, pagenum)
     except NoSuchElementException:
         print ("Webpage Not Accessible, Try again after some time")
 
-def main(url, tmpltxlsx, inputxlsx, outtmpltxlsx):
+def main(options):
     """
     main() function to start the program 
     
@@ -236,25 +247,26 @@ def main(url, tmpltxlsx, inputxlsx, outtmpltxlsx):
     tmplrange = ['Balance Sheet', 'Income Statement',
                  'Statement of Cash Flows', 'Shares Outstanding']
     # List of page numbers on moneycontrol website
-    if not os.path.isfile(inputxlsx):
-        pagelist = [1,2,7,8]
+    if not os.path.isfile(options.inputxlsx):
+        #pagelist = [1,2,7,8]
+        pagelist = [2]
         driver = webdriver.PhantomJS()
-        print("Parsing URL => "+url)
-        driver.get(url)
+        print("Parsing URL => "+options.url)
+        driver.get(options.url)
         listdfs = []
         for pagenum in pagelist:
-            listdfs.append(scrape_page(driver,pagenum))
-        save_xls(listdfs, inputxlsx)
-    bs = read_xls(inputxlsx)
+            listdfs.append(scrape_page(driver,pagenum,options.consoflag))
+        save_xls(listdfs, options.inputxlsx)
+    bs = read_xls(options.inputxlsx)
     # convert all numbers to float
     for col in bs.columns:
         bs[col] = pd.to_numeric(bs[col],errors='coerce')
 
     df = pd.DataFrame()
     for idx in range(len(tmplrange)-1):
-        template = read_template(tmpltxlsx,tmplrange[idx],tmplrange[idx+1])
+        template = read_template(options.tmpltxlsx,tmplrange[idx],tmplrange[idx+1])
         df = pd.concat([df,template_fill(template,bs)])
-    save_xls([df], outtmpltxlsx)
+    save_xls([df], options.outtmpltxlsx)
    
 def argparser():
     """
@@ -280,11 +292,13 @@ def argparser():
         "-o","--outtemplate", dest="outtmpltxlsx", help="Out Template xlsx file", default='Out_Quant_Template.xlsx')
     parser.add_option(
         "-x","--inputxls", dest="inputxlsx", help="Input xlsx file", default=inxlsfile)
+    parser.add_option(
+        "-c","--consolidateflag", action="store_true", dest="consoflag", help="Get consolidated results", default=False)
     (opts, args) = parser.parse_args(sys.argv)
     return opts
 
 if __name__ == '__main__':
      # Parse the arguments and pass to main
      options = argparser()
-     sys.exit(main(options.url, options.tmpltxlsx, options.inputxlsx, options.outtmpltxlsx))
+     sys.exit(main(options))
 
