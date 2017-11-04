@@ -54,30 +54,39 @@ key_map = {
            'Total Liabilities and Equity':'Total Capital And Liabilities',
            'Sales':'Total Operating Revenues',
            'Depreciation and Amortization':'Depreciation And Amortisation Expenses',
-#           'Interest Expense':'Finance Costs',
-#           'Other Gains and Losses':'Exceptional Items',
-#           'Pretax Income': 'Profit/Loss Before Tax',
-#           'Income Tax Expense':'Total Tax Expenses',
-#           'Net Income':'Profit/Loss For The Period',
-#           'Net Cash from Operations':'Net CashFlow From Operating Activities',
-#           'Net Cash from Investing Activities':'Net Cash Used In Investing Activities',
-#           'Net Cash from Financing Activities':'Net Cash Used From Financing Activities',
-#           'Change in cash':'Net Inc/Dec In Cash And Cash Equivalents',
-#           'Earnings per share': 'Diluted EPS (Rs.)',
-#           'Dividends per share': 'Dividend / Share(Rs.)',
-#           'BookValue per share': 'Book Value [InclRevalReserve]/Share (Rs.)',
-#           'Other Current Assets':[['Total Current Assets'],['Inventories','Trade Receivables','Cash And Cash Equivalents']],
-#           'Other Current Liabilities':[['Total Current Liabilities'],['Trade Payables']],
-#           'Other Liabilities': [['Total Non-Current Liabilities'], ['Long Term Borrowings','Deferred Tax Liabilities [Net]']],
-#           'Total Liabilities': [['Total Current Liabilities','Total Non-Current Liabilities']],
-#           'Cost of Goods Sold':[['Cost Of Materials Consumed', 'Purchase Of Stock-In Trade', 'Changes In Inventories Of FG,WIP And Stock-In Trade']],
-#           'Gross Profit':[['Total Operating Revenues'],['Cost Of Materials Consumed', 'Purchase Of Stock-In Trade', 'Changes In Inventories Of FG,WIP And Stock-In Trade']],
-#           'Operating Income before Depr':[['Total Operating Revenues'], ['Cost Of Materials Consumed', 'Purchase Of Stock-In Trade', 'Changes In Inventories Of FG,WIP And Stock-In Trade', 'Employee Benefit Expenses', 'Other Expenses']],
-#           'Operating Profit':[['Total Operating Revenues'], ['Cost Of Materials Consumed','Purchase Of Stock-In Trade','Changes In Inventories Of FG,WIP And Stock-In Trade', 'Employee Benefit Expenses', 'Other Expenses', 'Depreciation And Amortisation Expenses']],
-#           'Selling, General, and Admin Exp':[['Employee Benefit Expenses', 'Other Expenses']]
+           'Interest Expense':'Finance Costs',
+           'Other Gains and Losses':'Exceptional Items',
+           'Pretax Income': 'Profit/Loss Before Tax',
+           'Income Tax Expense':'Total Tax Expenses',
+           'Net Income':'Profit/Loss For The Period',
+           'Net Cash from Operations':'Net CashFlow From Operating Activities',
+           'Net Cash from Investing Activities':'Net Cash Used In Investing Activities',
+           'Net Cash from Financing Activities':'Net Cash Used From Financing Activities',
+           'Change in cash':'Net Inc/Dec In Cash And Cash Equivalents',
+           'Earnings per share': 'Diluted EPS (Rs.)',
+           'Dividends per share': 'Dividend / Share(Rs.)',
+           'BookValue per share': 'Book Value [InclRevalReserve]/Share (Rs.)',
           }
+calc_keymap = {
+           'Other Current Assets':[['Total Current Assets'],['Inventories','Trade Receivables','Cash And Cash Equivalents']],
+           'Other Current Liabilities':[['Total Current Liabilities'],['Trade Payables']],
+           'Other Liabilities': [['Total Non-Current Liabilities'], ['Long Term Borrowings','Deferred Tax Liabilities [Net]']],
+           'Total Liabilities': [['Total Current Liabilities','Total Non-Current Liabilities'],[]],
+           'Cost of Goods Sold':[['Cost Of Materials Consumed', 
+                                  'Purchase Of Stock-In Trade', 
+                                  'Changes In Inventories Of FG,WIP And Stock-In Trade'],[]],
+           'Gross Profit':[['Total Operating Revenues'],['Cost Of Materials Consumed', 
+                            'Purchase Of Stock-In Trade', 'Changes In Inventories Of FG,WIP And Stock-In Trade']],
+           'Operating Income before Depr':[['Total Operating Revenues'], ['Cost Of Materials Consumed', 
+                             'Purchase Of Stock-In Trade', 'Changes In Inventories Of FG,WIP And Stock-In Trade', 
+                             'Employee Benefit Expenses', 'Other Expenses']],
+           'Operating Profit':[['Total Operating Revenues'], ['Cost Of Materials Consumed',
+                                'Purchase Of Stock-In Trade','Changes In Inventories Of FG,WIP And Stock-In Trade', 
+                                'Employee Benefit Expenses', 'Other Expenses', 'Depreciation And Amortisation Expenses']],
+           'Selling, General, and Admin Exp':[['Employee Benefit Expenses', 'Other Expenses'],[]]
+           }
 
-def fill_template(tmpltxlsx, bs):
+def read_template(tmpltxlsx,start, end):
     if not os.path.isfile(os.path.join(os.getcwd(),tmpltxlsx)):
         print("Template File Missing")
         return
@@ -86,31 +95,31 @@ def fill_template(tmpltxlsx, bs):
     df.drop(df.columns[:1], axis=1,inplace=True) # Drop the first columns 'Unamed'
     df.index = df.index.str.strip()  # Remove any whitespaces in the index
     df = df.loc[df.index.notnull()]  # Drop all rows with index NaN
-    #df = df.reset_index().drop_duplicates(subset=['Company Name']) #drop duplicate rows 
-    #df = df.set_index(keys=df.columns[0]) # set the index back to key names
-    for key, item in key_map.items():
-        if type(item) is str :
-            if item in bs.index: 
-                bs.loc[item].fillna('0.00',inplace=True)
-                if isinstance(df.loc[key], pd.DataFrame) : # indicates duplicate index rows
-                    for idx, x in enumerate(df.loc[key].index):
-                        df.loc[key].iloc[idx] = bs.loc[item].values
-                else:
-                    df.loc[key] = bs.loc[item].values
-        elif type(item) is list and len(item) <= 2:
-            result = []
-            for b in item:
-                x = df.loc[key] 
-                for r in b:
-                    if r in bs.index: 
-                        x += pd.to_numeric(bs.loc[r], errors='coerce')
-                result.append(x)
-            if len(item) == 2: result[0] -= result[1]
-            if result: df.loc[key] = result[0].values
-        else:
-            continue
-    print('------------------------')
-    print(df)
+    return df[start:end]
+
+def add_data_rows(rowlist, bs, ele):
+    if not rowlist: return
+    [rowlist.remove(ele) for ele in rowlist[:] if not ele in bs.index]
+    df = bs.loc[rowlist,:]
+    return df.apply(lambda col: col.sum())
+
+def template_fill(tmpl, bs):
+    for ele in tmpl.index:
+        if ele in key_map and key_map[ele] in bs.index:
+            # if no calculation required, simply copy the values to template
+            kmap = key_map[ele]
+            tmpl.loc[ele] = bs.loc[kmap].values
+            tmpl.loc[ele].fillna('0.00',inplace=True)
+        elif ele in calc_keymap:
+            # calculate the values before copying to template
+            key = calc_keymap[ele]
+            bs.loc['scratch1'] = add_data_rows(key[0],bs,ele)
+            bs.loc['scratch2'] = add_data_rows(key[1],bs,ele)
+            bs.loc['scratch'] = bs.apply(lambda row: row['scratch1'] - row['scratch2'])
+            tmpl.loc[ele] = bs.loc['scratch'].values
+            tmpl.loc[ele].fillna('0.00',inplace=True)
+            bs.drop(['scratch1','scratch2','scratch'],inplace=True)
+    return tmpl
 
 def read_xls(xls_path, num_sheets=2):
     df = pd.DataFrame()
@@ -212,7 +221,7 @@ def scrape_page(driver,pagenum):
     except NoSuchElementException:
         print ("Webpage Not Accessible, Try again after some time")
 
-def main(url, tmpltxlsx, inputxlsx):
+def main(url, tmpltxlsx, inputxlsx, outtmpltxlsx):
     """
     main() function to start the program 
     
@@ -224,18 +233,28 @@ def main(url, tmpltxlsx, inputxlsx):
     -------
     None 
     """
+    tmplrange = ['Balance Sheet', 'Income Statement',
+                 'Statement of Cash Flows', 'Shares Outstanding']
     # List of page numbers on moneycontrol website
     if not os.path.isfile(inputxlsx):
         pagelist = [1,2,7,8]
-        listdfs = []
         driver = webdriver.PhantomJS()
         print("Parsing URL => "+url)
         driver.get(url)
+        listdfs = []
         for pagenum in pagelist:
             listdfs.append(scrape_page(driver,pagenum))
         save_xls(listdfs, inputxlsx)
     bs = read_xls(inputxlsx)
-    fill_template(tmpltxlsx,bs)
+    # convert all numbers to float
+    for col in bs.columns:
+        bs[col] = pd.to_numeric(bs[col],errors='coerce')
+
+    df = pd.DataFrame()
+    for idx in range(len(tmplrange)-1):
+        template = read_template(tmpltxlsx,tmplrange[idx],tmplrange[idx+1])
+        df = pd.concat([df,template_fill(template,bs)])
+    save_xls([df], outtmpltxlsx)
    
 def argparser():
     """
@@ -258,6 +277,8 @@ def argparser():
     parser.add_option(
         "-t","--template", dest="tmpltxlsx", help="Template xlsx file", default='Stock_Analysis_Quant_Template.xlsx')
     parser.add_option(
+        "-o","--outtemplate", dest="outtmpltxlsx", help="Out Template xlsx file", default='Out_Quant_Template.xlsx')
+    parser.add_option(
         "-x","--inputxls", dest="inputxlsx", help="Input xlsx file", default=inxlsfile)
     (opts, args) = parser.parse_args(sys.argv)
     return opts
@@ -265,5 +286,5 @@ def argparser():
 if __name__ == '__main__':
      # Parse the arguments and pass to main
      options = argparser()
-     sys.exit(main(options.url, options.tmpltxlsx, options.inputxlsx))
+     sys.exit(main(options.url, options.tmpltxlsx, options.inputxlsx, options.outtmpltxlsx))
 
