@@ -13,6 +13,7 @@ from openpyxl import load_workbook
 from openpyxl import Workbook
 from openpyxl.utils import column_index_from_string
 from collections import Counter
+from collections import OrderedDict
 
 defaulturl = '''http://www.moneycontrol.com/india/stockpricequote/miscellaneous/crisil/CRI'''
 inxlsfile = os.path.join(os.getcwd(),defaulturl.split()[0].split('/')[6]+"MC.xlsx")
@@ -153,7 +154,8 @@ def index_union(df1, df2, pagenum):
              [resultlist.append(x) for x in b1list[p1:c1][:1]+list(set(b1list[p1:c1][1:]+b2list[p2:c2][1:]))]
              p1 = c1
              p2 = c2
-    #print([k for k,v in Counter(resultlist).items() if v>1]) Find duplicates in resultlist
+    resultlist = list(OrderedDict.fromkeys(resultlist)) # Remove duplicates
+    #print([k for k,v in Counter(resultlist).items() if v>1]) #Find duplicates in resultlist
     return resultlist
 
 def cleanz_data(df):
@@ -214,7 +216,6 @@ def scrape_page(driver,pagenum,cflag):
                   '''//*[@id="mc_mainWrapper"]/div[3]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/ul/li[2]/a''',
 		  '''//*[@id="mc_mainWrapper"]/div[3]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div/div[1]/div[1]/table/tbody/tr/td/a/b''']
     try:
-        print('--------'+str(pagenum)+'--------')
         driver.find_element_by_xpath(navigXpath[0]).click()
         driver.find_element_by_xpath(navigXpath[1]).click()
         if not cflag:
@@ -248,8 +249,8 @@ def main(options):
                  'Statement of Cash Flows', 'Shares Outstanding']
     # List of page numbers on moneycontrol website
     if not os.path.isfile(options.inputxlsx):
-        #pagelist = [1,2,7,8]
-        pagelist = [2]
+        pagelist = [1,2,7,8]
+        #pagelist = [2]
         driver = webdriver.PhantomJS()
         print("Parsing URL => "+options.url)
         driver.get(options.url)
