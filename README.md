@@ -18,6 +18,18 @@ This repository contains two projects.
             -x INPUTXLSX, --inputxls=INPUTXLSX           Input xlsx file
             -c, --consolidateflag                        Get consolidated results
 
+Example output of excel sheet
+-----------------------------
+* Balance Sheet
+<img width="1006" alt="screenshot at jan 26 14-11-32" src="https://github.com/ketanmukadam/StockData/blob/master/store/BalanceSheet.png">
+
+* Profit and Loss 
+<img width="806" alt="screenshot at jan 26 14-11-32" src="https://github.com/ketanmukadam/StockData/blob/master/store/ProfitLoss.png">
+
+* Financial Ratios 
+<img width="806" alt="screenshot at jan 26 14-11-32" src="https://github.com/ketanmukadam/StockData/blob/master/store/Ratios.png">
+
+
 ## License
 
 See the [LICENSE](LICENSE.md) file for license rights and limitations.
