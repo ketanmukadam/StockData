@@ -232,6 +232,7 @@ def scrape_page(driver,pagenum,cflag):
         return merge_lists(First5yr, Second5yr, pagenum)
     except NoSuchElementException:
         print ("Webpage Not Accessible, Try again after some time")
+        sys.exit(-1)
 
 def main(options):
     """
