@@ -181,9 +181,10 @@ def merge_lists(First5yr, Second5yr, pagenum):
     b2 = df2.dropna(how='all').rename(columns={col : df2.iloc[0][idx] 
                     for idx, col in enumerate(df2.columns) if idx}).set_index(
                     keys=df2.columns[0]) #Make first column as index
-    # No Year index in any other row -> happens in P&L
+    # Remove Year index in any other row except the top -> happens in P&L
     if b1.columns[0] in b1.index : b1.drop(b1.columns[0], inplace=True)
     if b2.columns[0] in b2.index : b2.drop(b2.columns[0], inplace=True)
+    # Merge the two 5 years data to get 10 years financial data
     return b1.join(b2, how='outer').reindex(index_union(b1, b2, pagenum))
 
 def save_data(data,dest):   
@@ -219,16 +220,18 @@ def scrape_page(driver,pagenum,cflag):
         driver.find_element_by_xpath(navigXpath[0]).click()
         driver.find_element_by_xpath(navigXpath[1]).click()
         if not cflag:
+	    # Get Standalone data of the company
             First5yr = pull_data(driver.page_source)
             driver.find_element_by_xpath(navigXpath[3]).click()
             Second5yr = pull_data(driver.page_source)
         else:
+	    # Get consolidated data of the company	
             driver.find_element_by_xpath(navigXpath[2]).click()
             First5yr = pull_data(driver.page_source)
+	    # The moneycontrol page only shows 5 years data on main URL
+	    # click the javascript button to go to next 5 years data
             driver.find_element_by_xpath(navigXpath[3]).click()
             Second5yr = pull_data(driver.page_source)
-        #save_data(First5yr,defaulturl.split(sep='/')[6] + '1.xlsx')
-        #save_data(Second5yr,defaulturl.split(sep='/')[6] + '2.xlsx')
         return merge_lists(First5yr, Second5yr, pagenum)
     except NoSuchElementException:
         print ("Webpage Not Accessible, Try again after some time")
