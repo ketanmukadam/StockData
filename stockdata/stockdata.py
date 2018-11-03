@@ -20,7 +20,7 @@ class WgetFinData(SDPickleMixin, SDScraperMixin, SDxlsMixin):
           if self.url:
              self.driver = webdriver.PhantomJS()
              self.driver.get(self.url)
-             assert title in self.driver.title
+             #assert title in self.driver.title
 
       def query_google(self, searchtext):
           """

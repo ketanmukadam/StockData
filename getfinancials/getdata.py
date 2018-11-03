@@ -128,7 +128,7 @@ def read_xls(xls_path, num_sheets=2):
     df = pd.DataFrame()
     xl = pd.ExcelFile(xls_path)
     for sheetname in xl.sheet_names[:num_sheets]:
-        df = df.append(pd.read_excel(xls_path, sheetname=sheetname))
+        df = df.append(pd.read_excel(xls_path, sheet_name=sheetname))
     return df
 
 
@@ -159,6 +159,7 @@ def index_union(df1, df2, pagenum):
     return resultlist
 
 def cleanz_data(df):
+    #print(df) 
     df.drop_duplicates(inplace=True)       #Drop duplicate lines, in P&L Year row is duplicated 
     df.fillna(value=np.nan, inplace=True)  #Replace None --> NaN
     df.dropna(how='all', inplace=True)     #Drop rows with all NaN, some tables have NaN row before Year row
